@@ -3,7 +3,7 @@ const qrcode = require('qrcode-terminal');
 const axios = require('axios');
 require('dotenv').config();
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const VENICE_API_KEY = process.env.VENICE_API_KEY;
 
 const SYSTEM_PROMPT = `You are Wong Chan. Real human. NOT AI.
 
@@ -53,10 +53,10 @@ client.on('message', async msg => {
     await new Promise(resolve => setTimeout(resolve, typingTime));
     
     try {
-        const res = await axios.post('https://api.openai.com/v1/chat/completions', {
-            model: 'gpt-3.5-turbo',
+        const res = await axios.post('https://api.venice.ai/api/v1/chat/completions', {
+            model: 'llama-3.3-70b',
             messages: [{ role: 'system', content: SYSTEM_PROMPT }, { role: 'user', content: msg.body }]
-        }, { headers: { 'Authorization': `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' } });
+        }, { headers: { 'Authorization': `Bearer ${VENICE_API_KEY}`, 'Content-Type': 'application/json' } });
         
         await msg.reply(res.data.choices[0].message.content);
     } catch (e) {
