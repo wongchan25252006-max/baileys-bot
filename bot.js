@@ -35,23 +35,35 @@ async function startBot() {
 
     sock.ev.on('creds.update', saveCreds);
 
-    // Request pairing code on first run (before account is registered)
-    if (!sock.authState.creds.registered) {
-        const code = await sock.requestPairingCode(PHONE_NUMBER);
-        console.log('==============================================');
-        console.log(`  PAIRING CODE: ${code}`);
-        console.log('==============================================');
-        console.log('On your phone: WhatsApp > Settings > Linked Devices > Link a Device > Link with phone number instead');
-    }
+    let pairingCodeRequested = false;
 
-    sock.ev.on('connection.update', ({ connection, lastDisconnect }) => {
+    sock.ev.on('connection.update', async (update) => {
+        const { connection, lastDisconnect, qr } = update;
+
+        // qr being present means WhatsApp servers are ready — request pairing code instead
+        if (qr && !pairingCodeRequested && !sock.authState.creds.registered) {
+            pairingCodeRequested = true;
+            try {
+                const code = await sock.requestPairingCode(PHONE_NUMBER);
+                console.log('');
+                console.log('╔══════════════════════════════╗');
+                console.log(`║  PAIRING CODE: ${code}  ║`);
+                console.log('╚══════════════════════════════╝');
+                console.log('');
+                console.log('Steps: WhatsApp → Settings → Linked Devices → Link a Device → Link with phone number instead');
+                console.log('');
+            } catch (err) {
+                console.error('Failed to get pairing code:', err.message);
+            }
+        }
+
         if (connection === 'close') {
-            const code = lastDisconnect?.error?.output?.statusCode;
-            if (code !== DisconnectReason.loggedOut) {
+            const statusCode = lastDisconnect?.error?.output?.statusCode;
+            if (statusCode !== DisconnectReason.loggedOut) {
                 console.log('Connection closed, reconnecting...');
                 startBot();
             } else {
-                console.log('Logged out. Delete auth_info_baileys/ and restart to re-pair.');
+                console.log('Logged out. Delete auth_info_baileys/ folder and restart to re-pair.');
             }
         } else if (connection === 'open') {
             console.log('WONG CHAN AI IS RUNNING!');
