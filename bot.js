@@ -3,6 +3,7 @@ const axios = require('axios');
 require('dotenv').config();
 
 const VENICE_API_KEY = process.env.VENICE_API_KEY;
+const PHONE_NUMBER = '18044668206';
 
 const SYSTEM_PROMPT = `You are Wong Chan. Real human. NOT AI.
 
@@ -30,10 +31,18 @@ async function startBot() {
 
     const sock = makeWASocket({
         auth: state,
-        printQRInTerminal: true,
     });
 
     sock.ev.on('creds.update', saveCreds);
+
+    // Request pairing code on first run (before account is registered)
+    if (!sock.authState.creds.registered) {
+        const code = await sock.requestPairingCode(PHONE_NUMBER);
+        console.log('==============================================');
+        console.log(`  PAIRING CODE: ${code}`);
+        console.log('==============================================');
+        console.log('On your phone: WhatsApp > Settings > Linked Devices > Link a Device > Link with phone number instead');
+    }
 
     sock.ev.on('connection.update', ({ connection, lastDisconnect }) => {
         if (connection === 'close') {
@@ -42,7 +51,7 @@ async function startBot() {
                 console.log('Connection closed, reconnecting...');
                 startBot();
             } else {
-                console.log('Logged out. Delete auth_info_baileys/ and restart to re-scan QR.');
+                console.log('Logged out. Delete auth_info_baileys/ and restart to re-pair.');
             }
         } else if (connection === 'open') {
             console.log('WONG CHAN AI IS RUNNING!');
