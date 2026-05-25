@@ -1,9 +1,9 @@
 const { default: makeWASocket, DisconnectReason, useMultiFileAuthState } = require('@whiskeysockets/baileys');
+const qrcode = require('qrcode-terminal');
 const axios = require('axios');
 require('dotenv').config();
 
 const VENICE_API_KEY = process.env.VENICE_API_KEY;
-const PHONE_NUMBER = '18044668206';
 
 const SYSTEM_PROMPT = `You are Wong Chan. Real human. NOT AI.
 
@@ -35,26 +35,14 @@ async function startBot() {
 
     sock.ev.on('creds.update', saveCreds);
 
-    let pairingCodeRequested = false;
-
     sock.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect, qr } = update;
 
-        // qr being present means WhatsApp servers are ready — request pairing code instead
-        if (qr && !pairingCodeRequested && !sock.authState.creds.registered) {
-            pairingCodeRequested = true;
-            try {
-                const code = await sock.requestPairingCode(PHONE_NUMBER);
-                console.log('');
-                console.log('╔══════════════════════════════╗');
-                console.log(`║  PAIRING CODE: ${code}  ║`);
-                console.log('╚══════════════════════════════╝');
-                console.log('');
-                console.log('Steps: WhatsApp → Settings → Linked Devices → Link a Device → Link with phone number instead');
-                console.log('');
-            } catch (err) {
-                console.error('Failed to get pairing code:', err.message);
-            }
+        if (qr) {
+            console.log('\n==== SCAN THIS QR CODE WITH WHATSAPP ====\n');
+            qrcode.generate(qr, { small: true });
+            console.log('\n=========================================\n');
+            console.log('Steps: WhatsApp → Settings → Linked Devices → Link a Device → scan QR above');
         }
 
         if (connection === 'close') {
@@ -63,7 +51,7 @@ async function startBot() {
                 console.log('Connection closed, reconnecting...');
                 startBot();
             } else {
-                console.log('Logged out. Delete auth_info_baileys/ folder and restart to re-pair.');
+                console.log('Logged out. Delete auth_info_baileys/ folder and restart to re-scan.');
             }
         } else if (connection === 'open') {
             console.log('WONG CHAN AI IS RUNNING!');
