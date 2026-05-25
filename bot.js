@@ -7,7 +7,7 @@ async function startBot() {
 
     const sock = makeWASocket({
         auth: state,
-        logger: pino({ level: 'silent' }),
+        logger: pino({ level: 'warn' }),
     });
 
     sock.ev.on('creds.update', saveCreds);
@@ -22,10 +22,12 @@ async function startBot() {
             console.log('Connected!');
         }
         if (connection === 'close') {
-            const loggedOut = lastDisconnect?.error?.output?.statusCode === DisconnectReason.loggedOut;
+            const statusCode = lastDisconnect?.error?.output?.statusCode;
+            console.log('Connection closed. Code:', statusCode);
+            const loggedOut = statusCode === DisconnectReason.loggedOut;
             if (!loggedOut) startBot();
         }
     });
 }
 
-startBot();
+startBot().catch(err => console.error('Fatal error:', err));
