@@ -616,13 +616,15 @@ async function startBot() {
   sock = makeWASocket({
     auth: state,
     logger: pino({level:'warn'}),
-    printQRInTerminal: true,
+    printQRInTerminal: false,
   });
 
   sock.ev.on('creds.update', saveCreds);
 
   sock.ev.on('connection.update', ({connection, lastDisconnect, qr}) => {
-    if (qr) { console.log('\n=== SCAN QR CODE ===\n'); qrcode.generate(qr, {small:true}); }
+    if (qr) { 
+    qrcode.generate(qr, {small: true});
+}
     if (connection === 'open') {
       console.log('✅ Wong Chan Bot ONLINE!');
       sendAdmin(`✅ *Wong Chan Bot is ONLINE*\nType HELP for commands`).catch(()=>{});
